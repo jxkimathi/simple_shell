@@ -19,28 +19,23 @@ int main(int argc, char **argv, char **env)
 	ssize_t bytes;
 	size_t n = 0;
 	bool fr_pipe = false;
+	(void)argc, (void)argv;
 
 	while (1 && !fr_pipe)
 	{
 		if (isatty(STDIN_FILENO) == 0)
 			fr_pipe = true;
-
-		write (STDOUT_FILENO, prompt, 2);
-
+		write(STDOUT_FILENO, prompt, 2);
 		bytes = getline(&buffer, &n, stdin);
-
 		if (bytes == -1)
 		{
 			perror("Error (from getline)");
 			free(buffer);
 			exit(EXIT_FAILURE);
 		}
-
 		if (buffer[bytes - 1] == '\n')
 			buffer[bytes - 1] = '\0';
-
 		pid = fork();
-
 		if (pid == -1)
 		{
 			perror("Error (from fork)");
@@ -48,14 +43,12 @@ int main(int argc, char **argv, char **env)
 		}
 		if (pid == 0)
 			_execute(buffer, &statbuffer, env);
-
 		if (waitpid(pid, &status, 0) == -1)
 		{
 			perror("Error (from wait)");
 			exit(EXIT_FAILURE);
 		}
 	}
-
 	free(buffer);
 	return (0);
 }
@@ -71,10 +64,36 @@ int main(int argc, char **argv, char **env)
 
 int _execute(char *args, struct stat *statbuffer, char **envp)
 {
-	char **argv;
+	char **argv = NULL;
+	int argc = 0;
 
-	argv = strtok(args, " ");
+	char *token = strtok(args, " ");
 
+	while (token)
+	{
+		argv = realloc(argv, (argc + 1) * sizeof(char *));
+		if (!argv)
+		{
+			perror("Memory allocation error");
+			exit(EXIT_FAILURE);
+		}
+		argv[argc] = strdup(token);
+		if (!argv[argc])
+		{
+			perror("Memory allocation error");
+			exit(EXIT_FAILURE);
+		}
+		argc++;
+		token = strtok(NULL, " ");
+	}
+
+	argv = realloc(argv, (argc + 1) * sizeof(char *));
+	if (!argv)
+	{
+		perror("Memory allocation error");
+		exit(EXIT_FAILURE);
+	}
+	argv[argc] = NULL;
 	if (!check_status(argv[0], statbuffer))
 	{
 		perror("Error (from file status)");
