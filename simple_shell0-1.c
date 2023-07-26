@@ -59,7 +59,7 @@ int main(int argc, char **argv, char **env)
  * @statbuffer: The structure to be checked
  * @envp: The environment variable
  *
- * Return: Nothing on success, otherwise return error
+ * Return: 0 on success, non-zero on errors or if "exit" command is used
  */
 
 int _execute(char *args, struct stat *statbuffer, char **envp)
@@ -104,6 +104,7 @@ int _execute(char *args, struct stat *statbuffer, char **envp)
 
 	perror("Error (execve)");
 	exit(EXIT_FAILURE);
+
 }
 
 /**
