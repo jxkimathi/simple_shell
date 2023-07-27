@@ -26,26 +26,26 @@ void shell_env(void)
 
 int _execute(char *argv, char **av)
 {
-	char *input_path, *input;
+	char *cmd_path, *cmd;
 	pid_t pid;
 	int status;
 
 	if (!av[0])
 		return (0);
-	input = av[0];
-	if (strcmp(input, "exit") == 0)
+	cmd = av[0];
+	if (strcmp(cmd, "exit") == 0)
 	{
 		free_tokens(av);
 		exit(0);
 	}
-	else if (strcmp(input, "env") == 0)
+	else if (strcmp(cmd, "env") == 0)
 		shell_env();
 	else
 	{
-		input_path = get_location(input);
-		if (!input_path)
+		cmd_path = get_location(cmd);
+		if (!cmd_path)
 		{
-			fprintf(stderr, "%s: 1: %s: not found\n", argv, input);
+			fprintf(stderr, "%s: 1: %s: not found\n", argv, cmd);
 			return (0);
 		}
 		pid = fork();
@@ -53,7 +53,7 @@ int _execute(char *argv, char **av)
 			perror("Error");
 		else if (pid == 0)
 		{
-			if (execve(input_path, av, NULL) == -1)
+			if (execve(cmd_path, av, NULL) == -1)
 			{
 				perror("Error: ");
 				exit(0);
@@ -61,7 +61,7 @@ int _execute(char *argv, char **av)
 		}
 		else if (waitpid(pid, &status, 0) == -1)
 			perror("Error: ");
-		free(input_path);
+		free(cmd_path);
 	}
 	return (0);
 }
