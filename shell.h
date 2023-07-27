@@ -10,17 +10,21 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 
+#define BUFF_SIZE 1024
+
 /*Global environment*/
 extern char **environ;
 
 void free_tokens(char **tokens);
-int _execute(char *args, struct stat *statbuffer, char **envp);
-bool check_status(char *path, struct stat *statbuffer);
-void handle_error(pid_t pid);
-char *get_location(const char *cmd);
+int _execute(char *argv, char **av);
+int main(int argc, char **argv);
+char *get_location(const char *input);
 int my_exit(int argc, char **argv);
 void shell_env(void);
 int _putchar(char c);
 char **tokenize(char *str);
+void free_tokens(char **args);
+void prompt(void);
+int is_betty_Style(int a, int b);
 
 #endif

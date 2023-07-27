@@ -1,144 +1,117 @@
 #include "shell.h"
+#define DELIM " \n\t\r"
+
+void free_tokens(char **args);
 
 /**
- * main - A super simple shell that runs commands
- * @argc: Number of arguments
- * @argv: First argument name
- * @env: The environment
+ * tokenize - splits the string into tokens
+ * @str: input string to split
  *
- * Return: Always 0
+ * Return: a pointer to an array of strings
  */
 
-int main(int argc, char **argv, char **env)
+char **tokenize(char *str)
 {
-	char *buffer = NULL;
-	char *prompt = "$ ";
-	pid_t pid;
-	int status;
-	struct stat statbuffer;
-	ssize_t bytes;
-	size_t n = 0;
-	bool fr_pipe = false;
-	(void)argc, (void)argv;
+	char *token, **args /*str_cpy*/;
+	int i = 0;
 
-	while (1 && !fr_pipe)
+	args = malloc(sizeof(char *) * 1024);
+	if (!args)
 	{
-		if (isatty(STDIN_FILENO) == 0)
-			fr_pipe = true;
-		write(STDOUT_FILENO, prompt, 2);
-		bytes = getline(&buffer, &n, stdin);
-		if (bytes == -1)
-		{
-			perror("Error (from getline)");
-			free(buffer);
-			exit(EXIT_FAILURE);
-		}
-		if (buffer[bytes - 1] == '\n')
-			buffer[bytes - 1] = '\0';
-		pid = fork();
-		if (pid == -1)
-		{
-			perror("Error (from fork)");
-			exit(EXIT_FAILURE);
-		}
-		if (pid == 0)
-			_execute(buffer, &statbuffer, env);
-		if (waitpid(pid, &status, 0) == -1)
-		{
-			perror("Error (from wait)");
-			exit(EXIT_FAILURE);
-		}
+		/*free(args)*/
+		return (NULL);
 	}
-	free(buffer);
-	return (0);
-}
-
-/**
- * _execute - Executes the program
- * @args: The number of arguments
- * @statbuffer: The structure to be checked
- * @envp: The environment variable
- *
- * Return: 0 on success, non-zero on errors or if "exit" command is used
- */
-
-int _execute(char *args, struct stat *statbuffer, char **envp)
-{
-	char **argv = NULL;
-	int argc = 0;
-
-	char *token = strtok(args, " ");
-
+	token = strtok(str, DELIM);
 	while (token)
 	{
-		argv = realloc(argv, (argc + 1) * sizeof(char *));
-		if (!argv)
+		args[i] = strdup(token);
+		if (!args[i])
 		{
-			perror("Memory allocation error");
-			exit(EXIT_FAILURE);
+			free_tokens(args);
+			return (NULL);
 		}
-		argv[argc] = strdup(token);
-		if (!argv[argc])
-		{
-			perror("Memory allocation error");
-			exit(EXIT_FAILURE);
-		}
-		argc++;
-		token = strtok(NULL, " ");
+		token = strtok(NULL, DELIM);
+		i++;
 	}
-
-	argv = realloc(argv, (argc + 1) * sizeof(char *));
-	if (!argv)
-	{
-		perror("Memory allocation error");
-		exit(EXIT_FAILURE);
-	}
-	argv[argc] = NULL;
-	if (!check_status(argv[0], statbuffer))
-	{
-		perror("Error (from file status)");
-		exit(EXIT_FAILURE);
-	}
-
-	execve(argv[0], argv, envp);
-
-	perror("Error (execve)");
-	exit(EXIT_FAILURE);
-
+	args[i] = NULL;
+	return (args);
 }
 
 /**
- * check_status - Checks the file status
- * @path: The path to check from
- * @statbuffer: The structure to be checked
- *
- * Return: false on success, otherwise true
+ * free_tokens - frees the array of tokens
+ * @args: array to be freed
+ * Return: void
  */
 
-bool check_status(char *path, struct stat *statbuffer)
+void free_tokens(char **args)
 {
-	int status_return;
+	int i;
 
-	status_return = stat(path, statbuffer);
+	if (args)
+	{
+		for (i = 0; args[i] != NULL; i++)
+		{
+			free(args[i]);
+		}
+		free(args);
+	}
+}
 
-	if (status_return == 0)
-		return (true);
 
-	return (false);
+/**
+ * prompt - prints the prompt for the simple shell
+ *
+ * Return: void
+ */
+
+void prompt(void)
+{
+	if (isatty(STDIN_FILENO))
+	{
+		write(STDOUT_FILENO, "$ ", 2);
+	}
 }
 
 /**
- * handle_error - Handles the errors
- * @pid: The process ID
+ * main - Entry point to main function
+ * @argc: argument count
+ * @argv: argument vector
  *
- * Return: Nothing
+ * Return: 0 on success
  */
 
-void handle_error(pid_t pid)
+int main(int argc, char **argv)
 {
-	if (pid == -1)
+	char *buffer = NULL;
+	int i;
+	size_t len;
+	ssize_t status;
+	char **arg;
+
+	while (1)
 	{
-		printf("Error");
-		exit(EXIT_FAILURE);
+		prompt();
+		status = getline(&buffer, &len, stdin);
+		if (status == -1)
+		{
+			free(buffer);
+			exit(0);
+		}
+		arg = tokenize(buffer);
+		if (arg == NULL)
+		{
+			continue;
+		}
+		_execute(argv[0], arg);
+
+		free_tokens(arg);
+		free(buffer);
+		buffer = NULL;
+		len = 0;
 	}
+	free_tokens(arg);
+	return (0);
+	argc++;
+	argv[i] = "l";
 }
+
